@@ -16,7 +16,6 @@ type nodeAPI struct {
 	client          *nodeClient
 	daemon          *nodeDaemon
 	dag             *nodeDag
-	ping            *nodePing
 	retrievalClient *nodeRetrievalClient
 	swarm           *nodeSwarm
 }
@@ -39,7 +38,6 @@ func New(node *node.Node) api.API {
 	api.client = newNodeClient(api)
 	api.daemon = newNodeDaemon(api)
 	api.dag = newNodeDag(api)
-	api.ping = newNodePing(api)
 	api.retrievalClient = newNodeRetrievalClient(api, porcelainAPI)
 	api.swarm = newNodeSwarm(api)
 
@@ -60,10 +58,6 @@ func (api *nodeAPI) Daemon() api.Daemon {
 
 func (api *nodeAPI) Dag() api.Dag {
 	return api.dag
-}
-
-func (api *nodeAPI) Ping() api.Ping {
-	return api.ping
 }
 
 func (api *nodeAPI) RetrievalClient() api.RetrievalClient {

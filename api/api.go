@@ -7,7 +7,6 @@ type API interface {
 	Client() Client
 	Daemon() Daemon
 	Dag() Dag
-	Ping() Ping
 	RetrievalClient() RetrievalClient
 	Swarm() Swarm
 }
