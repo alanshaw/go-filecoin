@@ -12,6 +12,7 @@ import (
 	"gx/ipfs/QmVmDhyTTUcQXFD1rRQ64fGLMSAoaQvNH3hwuaCFAPq2hy/errors"
 	"gx/ipfs/QmZNkThpqfVXs9GNbexPrfBbXSLNYeKrE7jwFM2oqHbyqN/go-libp2p-protocol"
 	"gx/ipfs/QmabLh8TrJ3emfAoQk5AbqbLTbMyj7XqumMFmAFxa9epo8/go-multistream"
+	"gx/ipfs/QmcNGX5RaxPPCYwa6yGXM1EcUbrreTTinixLcYGmMwf1sx/go-libp2p/p2p/protocol/ping"
 	"gx/ipfs/Qmd52WKRSwrBK5gUaJKawryZQ5by6UbNB8KVW2Zy6JtbyW/go-libp2p-host"
 
 	"github.com/filecoin-project/go-filecoin/actor/builtin/miner"
@@ -307,20 +308,16 @@ type ClientNodeImpl struct {
 	dserv     ipld.DAGService
 	host      host.Host
 	blockTime time.Duration
-	plumbing  clientNodeImplPlumbing
-}
-
-type clientNodeImplPlumbing interface {
-	NetworkPing(ctx context.Context, pid peer.ID) (<-chan time.Duration, error)
+	*ping.PingService
 }
 
 // NewClientNodeImpl constructs a ClientNodeImpl
-func NewClientNodeImpl(ds ipld.DAGService, host host.Host, plumbing clientNodeImplPlumbing, bt time.Duration) *ClientNodeImpl {
+func NewClientNodeImpl(ds ipld.DAGService, host host.Host, ps *ping.PingService, bt time.Duration) *ClientNodeImpl {
 	return &ClientNodeImpl{
-		dserv:     ds,
-		host:      host,
-		plumbing:  plumbing,
-		blockTime: bt,
+		dserv:       ds,
+		host:        host,
+		PingService: ps,
+		blockTime:   bt,
 	}
 }
 
@@ -353,9 +350,4 @@ func (cni *ClientNodeImpl) MakeProtocolRequest(ctx context.Context, protocol pro
 		return errors.Wrap(err, "failed to read response")
 	}
 	return nil
-}
-
-// Ping sends Pings to satisfy the ClientNode interface
-func (cni *ClientNodeImpl) Ping(ctx context.Context, pid peer.ID) (<-chan time.Duration, error) {
-	return cni.plumbing.NetworkPing(ctx, pid)
 }
