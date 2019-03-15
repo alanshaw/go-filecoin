@@ -53,7 +53,6 @@ type clientNode interface {
 	GetFileSize(context.Context, cid.Cid) (uint64, error)
 	MakeProtocolRequest(ctx context.Context, protocol protocol.ID, peer peer.ID, request interface{}, response interface{}) error
 	GetBlockTime() time.Duration
-	Ping(ctx context.Context, p peer.ID) (<-chan time.Duration, error)
 }
 
 type clientPorcelainAPI interface {
@@ -67,6 +66,7 @@ type clientPorcelainAPI interface {
 	MinerGetOwnerAddress(ctx context.Context, minerAddr address.Address) (address.Address, error)
 	MinerGetPeerID(ctx context.Context, minerAddr address.Address) (peer.ID, error)
 	types.Signer
+	NetworkPing(ctx context.Context, p peer.ID) (<-chan time.Duration, error)
 }
 
 // Client is used to make deals directly with storage miners.
@@ -200,7 +200,7 @@ func (smc *Client) pingMiner(ctx context.Context, pid peer.ID, timeout time.Dura
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	res, err := smc.node.Ping(ctx, pid)
+	res, err := smc.api.NetworkPing(ctx, pid)
 	if err != nil {
 		return fmt.Errorf("couldn't establish connection to miner: %s", err)
 	}
@@ -307,19 +307,13 @@ type ClientNodeImpl struct {
 	dserv     ipld.DAGService
 	host      host.Host
 	blockTime time.Duration
-	plumbing  clientNodeImplPlumbing
-}
-
-type clientNodeImplPlumbing interface {
-	NetworkPing(ctx context.Context, pid peer.ID) (<-chan time.Duration, error)
 }
 
 // NewClientNodeImpl constructs a ClientNodeImpl
-func NewClientNodeImpl(ds ipld.DAGService, host host.Host, plumbing clientNodeImplPlumbing, bt time.Duration) *ClientNodeImpl {
+func NewClientNodeImpl(ds ipld.DAGService, host host.Host, bt time.Duration) *ClientNodeImpl {
 	return &ClientNodeImpl{
 		dserv:     ds,
 		host:      host,
-		plumbing:  plumbing,
 		blockTime: bt,
 	}
 }
@@ -353,9 +347,4 @@ func (cni *ClientNodeImpl) MakeProtocolRequest(ctx context.Context, protocol pro
 		return errors.Wrap(err, "failed to read response")
 	}
 	return nil
-}
-
-// Ping sends Pings to satisfy the ClientNode interface
-func (cni *ClientNodeImpl) Ping(ctx context.Context, pid peer.ID) (<-chan time.Duration, error) {
-	return cni.plumbing.NetworkPing(ctx, pid)
 }
