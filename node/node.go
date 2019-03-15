@@ -123,7 +123,6 @@ type Node struct {
 	// Network Fields
 	BlockSub     pubsub.Subscription
 	MessageSub   pubsub.Subscription
-	Ping         *ping.PingService
 	HelloSvc     *hello.Handler
 	Bootstrapper *net.Bootstrapper
 	OnlineStore  *hamt.CborIpldStore
@@ -428,7 +427,6 @@ func (nc *Config) Build(ctx context.Context) (*Node, error) {
 		MsgPool:      msgPool,
 		OfflineMode:  nc.OfflineMode,
 		PeerHost:     peerHost,
-		Ping:         pinger,
 		Repo:         nc.Repo,
 		Wallet:       fcWallet,
 		blockTime:    nc.BlockTime,
@@ -500,7 +498,7 @@ func (node *Node) Start(ctx context.Context) error {
 	}
 	node.HelloSvc = hello.New(node.Host(), node.ChainReader.GenesisCid(), syncCallBack, node.ChainReader.Head, node.Repo.Config().Net, flags.Commit)
 
-	cni := storage.NewClientNodeImpl(dag.NewDAGService(node.BlockService()), node.Host(), node.Ping, node.GetBlockTime())
+	cni := storage.NewClientNodeImpl(dag.NewDAGService(node.BlockService()), node.Host(), node.PorcelainAPI, node.GetBlockTime())
 	var err error
 	node.StorageMinerClient, err = storage.NewClient(cni, node.PorcelainAPI)
 	if err != nil {
